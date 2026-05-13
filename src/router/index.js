@@ -1,7 +1,6 @@
 import Vue from 'vue';
 import VueRouter from 'vue-router';
 import Login from '../views/login/Login.vue';
-import HomePage from '../views/home/HomePage.vue';
 
 Vue.use(VueRouter);
 
@@ -16,42 +15,9 @@ const routes = [
     component: Login
   },
   {
-    path: '/homePage',
-    name: 'HomePage',
-    component: HomePage,
-    children: [
-      // WelcomPage
-      {
-        path: 'welcomPage',
-        component: () => import('../views/home/WelcomPage.vue'),
-        name: 'WelcomPage'
-      },
-      {
-        path: 'MainPage',
-        component: () => import('../views/home/MainPage.vue'),
-        name: 'MainPage'
-      },
-      {
-        path: 'sterilizationMonitor',
-        component: () => import('../views/home/SterilizationMonitor.vue'),
-        name: 'SterilizationMonitor'
-      },
-      {
-        path: 'aboutPage',
-        component: () => import('../views/home/AboutPage.vue'),
-        name: 'AboutPage'
-      },
-      {
-        path: 'scannerDebug',
-        component: () => import('../views/home/ScannerDebug.vue'),
-        name: 'ScannerDebug'
-      },
-      {
-        path: 'userManagement',
-        component: () => import('../views/home/UserManagement.vue'),
-        name: 'UserManagement'
-      }
-    ]
+    path: '/sterilizationMonitor',
+    name: 'SterilizationMonitor',
+    component: () => import('../views/home/SterilizationMonitor.vue')
   }
 ];
 

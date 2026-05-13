@@ -19,8 +19,8 @@ module.exports = defineConfig({
     electronBuilder: {
       nodeIntegration: true,
       builderOptions: {
-        productName: 'wcs-weigao-front', //生成exe的名字
-        appId: 'com.wl.wcs', //包名
+        productName: 'wcs-weigao-front-screen', //生成exe的名字
+        appId: 'com.wl.wcs.weigao.front.screen', //包名
         copyright: 'wl', //版权信息,
         nsis: {
           oneClick: false, // 是否一键安装

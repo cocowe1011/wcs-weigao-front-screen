@@ -24,9 +24,9 @@
         </div>
       </div>
       <div class="login-right-down">
-        <p class="title">WCS系统</p>
+        <p class="title">WCS信息监控系统</p>
         <p class="intro">
-          欢迎使用WCS系统。简洁、易用的操作页面，全自动化管理全力帮助您提高效率。
+          欢迎使用WCS信息监控系统。简洁、易用的操作页面，全自动化管理全力帮助您提高效率。
         </p>
         <div class="login-form">
           <el-input
@@ -57,11 +57,11 @@
       </div>
     </div>
     <transition name="fade">
-      <div class="zz-spin" v-show="!javaAppStarted">
+      <div class="zz-spin" v-show="loadingStatus">
         <div id="loader" class="loadloding">
           <div></div>
         </div>
-        <div id="lodtext">系统正在启动中...&nbsp;请稍后...</div>
+        <div id="lodtext">正在登录中...</div>
       </div>
     </transition>
   </div>
@@ -70,7 +70,6 @@
 <script>
 import { ipcRenderer } from 'electron';
 import HttpUtil from '@/utils/HttpUtil';
-import axios from 'axios';
 const remote = require('electron').remote;
 export default {
   name: 'Login',
@@ -80,11 +79,7 @@ export default {
     return {
       userCode: '',
       userPassword: '',
-      loadingStatus: false,
-      javaAppStarted: false,
-      javaAppUrl: process.env.VUE_APP_BASE_URL + '/status/check',
-      maxRetries: 30,
-      retryInterval: 1000
+      loadingStatus: false
     };
   },
   watch: {},
@@ -101,17 +96,19 @@ export default {
         .then((res) => {
           if (res.data) {
             remote.getGlobal('sharedObject').userInfo = res.data;
+            // 通知主进程登录成功，窗口全屏
+            ipcRenderer.send('logStatus', 'login');
             // 根据用户角色跳转不同页面
             setTimeout(() => {
               this.loadingStatus = false;
               // 跳转主页
               this.$nextTick(() => {
                 this.$router.replace({
-                  path: '/homePage/welcomPage',
+                  path: '/sterilizationMonitor',
                   query: { userRole: res.data.userRole }
                 });
               });
-            }, 2000);
+            }, 1000);
           } else {
             this.$message.error(res.message);
             this.loadingStatus = false;
@@ -127,48 +124,12 @@ export default {
     },
     minWindow() {
       ipcRenderer.send('min-window');
-    },
-    checkJavaAppStatus(retries = 0) {
-      axios
-        .get(this.javaAppUrl)
-        .then((response) => {
-          console.log(response);
-          if (response.data === 'OK') {
-            this.javaAppStarted = true;
-            this.$message.success('已启动！');
-            // 给主进程发消息，启动PLC连接
-            ipcRenderer.send('conPLC');
-          } else {
-            if (retries < this.maxRetries) {
-              setTimeout(
-                () => this.checkJavaAppStatus(retries + 1),
-                this.retryInterval
-              );
-            } else {
-              console.error('Java应用程序启动超时');
-            }
-          }
-        })
-        .catch((error) => {
-          if (retries < this.maxRetries) {
-            setTimeout(
-              () => this.checkJavaAppStatus(retries + 1),
-              this.retryInterval
-            );
-          } else {
-            console.error('检查Java应用程序状态时发生错误', error);
-          }
-        });
     }
   },
   created() {
     // ipcRenderer.send('logStatus','logout');
   },
-  mounted() {
-    if (!this.javaAppStarted) {
-      this.checkJavaAppStatus();
-    }
-  }
+  mounted() {}
 };
 </script>
 <style lang="less" scoped>
