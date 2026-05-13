@@ -77,15 +77,13 @@ app.on('ready', () => {
   ipcMain.on('logStatus', (event, arg) => {
     console.log(arg);
     if (arg === 'login') {
+      // 登录成功，进入真正全屏模式（隐藏任务栏）
+      mainWindow.setFullScreen(true);
       mainWindow.setResizable(true);
-      mainWindow.setBounds({
-        x: 0,
-        y: 0,
-        width: screen.getPrimaryDisplay().workAreaSize.width,
-        height: screen.getPrimaryDisplay().workAreaSize.height
-      });
     } else {
-      // 太几把坑了，windows系统setSize center方法失效 必须先mainWindow.unmaximize()
+      // 退出登录，退出全屏并恢复小窗口
+      mainWindow.setFullScreen(false);
+      // Windows系统setSize center方法失效 必须先mainWindow.unmaximize()
       mainWindow.unmaximize();
       mainWindow.setSize(1100, 600);
       mainWindow.center();
