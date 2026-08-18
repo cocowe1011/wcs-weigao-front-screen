@@ -188,9 +188,12 @@
             <span class="panel-title">故障日志</span>
           </div>
           <div class="fault-list">
+            <div v-if="faultLogs.length === 0" class="fault-empty">
+              暂无故障
+            </div>
             <div
               v-for="(log, index) in faultLogs"
-              :key="index"
+              :key="log.id || index"
               :class="['fault-item', 'fault-' + log.level]"
             >
               <span class="fault-time">{{ log.time }}</span>
@@ -208,17 +211,22 @@
     <footer class="monitor-footer">
       <div class="footer-content">
         <div class="footer-left">
-          <div class="system-status">
+          <div class="system-status" :class="{ disconnected: !apiConnected }">
             <div class="status-pulse"></div>
-            <span class="status-label">系统状态：</span>
-            <span class="status-value">服务器运行正常</span>
+            <span class="status-label">接口状态：</span>
+            <span class="status-value">{{
+              apiConnected ? '正常' : '异常'
+            }}</span>
+          </div>
+          <div class="system-status" :class="{ disconnected: !wsConnected }">
+            <div class="status-pulse"></div>
+            <span class="status-label">Socket状态：</span>
+            <span class="status-value">{{
+              wsConnected ? '已连接' : '重连中'
+            }}</span>
           </div>
         </div>
         <div class="footer-right">
-          <div class="footer-item">
-            <i class="el-icon-connection"></i>
-            <span>网络正常</span>
-          </div>
           <div class="footer-item">最后更新: {{ footerTime }}</div>
           <div class="footer-item">© 2025 威高灭菌中心</div>
         </div>
@@ -230,6 +238,7 @@
 <script>
 import { ipcRenderer } from 'electron';
 import HttpUtil from '@/utils/HttpUtil';
+import AlarmWebSocketClient from '@/utils/AlarmWebSocketClient';
 
 const EMPTY_WORKSTATIONS = [
   {
@@ -273,39 +282,10 @@ export default {
       workstations: EMPTY_WORKSTATIONS.map((s) => ({ ...s })),
       // 托盘格子状态：长度=托盘总数，元素表示该托盘是否已上货
       batchStatus: [],
-      // 故障日志（暂时写死）
-      faultLogs: [
-        {
-          time: '13:45:12',
-          level: 'error',
-          levelText: '错误',
-          message: 'B工位扫码枪通讯超时，已自动重连'
-        },
-        {
-          time: '11:20:05',
-          level: 'warning',
-          levelText: '警告',
-          message: '预热柜温度传感器读数波动，请检查线路'
-        },
-        {
-          time: '09:15:47',
-          level: 'warning',
-          levelText: '警告',
-          message: 'A工位输送链条电机电流偏高，建议巡检'
-        },
-        {
-          time: '08:02:30',
-          level: 'error',
-          levelText: '错误',
-          message: 'PLC 连接中断 3 秒，已自动恢复'
-        },
-        {
-          time: '07:50:18',
-          level: 'info',
-          levelText: '信息',
-          message: '系统完成例行自检，各模块状态正常'
-        }
-      ]
+      faultLogs: [],
+      wsClient: null,
+      wsConnected: false,
+      apiConnected: false
     };
   },
   computed: {
@@ -340,6 +320,7 @@ export default {
           '/produce_batch/getCurrentExecuting'
         );
         if (batchRes && batchRes.data) {
+          this.apiConnected = true;
           const { batch, pallets } = batchRes.data;
 
           this.batchNo = batch.batchNo || '--';
@@ -458,6 +439,7 @@ export default {
             buildStation('B', 'B工位（01006）', latestNon999())
           ];
         } else {
+          this.apiConnected = true;
           this.batchNo = '--';
           this.productInfoText = '--';
           this.specText = '--';
@@ -469,6 +451,7 @@ export default {
           this.workstations = EMPTY_WORKSTATIONS.map((s) => ({ ...s }));
         }
       } catch (e) {
+        this.apiConnected = false;
         console.error('灭菌监控数据轮询失败:', e);
       }
     },
@@ -493,6 +476,40 @@ export default {
     },
     closeApplication() {
       ipcRenderer.send('close-window');
+    },
+    initWebSocket() {
+      this.wsClient = new AlarmWebSocketClient({
+        onConnected: () => {
+          this.wsConnected = true;
+        },
+        onDisconnected: () => {
+          this.wsConnected = false;
+        },
+        onError: () => {
+          this.wsConnected = false;
+        },
+        onAlarmReceived: this.onAlarmReceived
+      });
+      this.wsClient.start();
+    },
+    onAlarmReceived(alarmLog) {
+      const log = {
+        id: alarmLog.id,
+        time: this.formatAlarmTime(alarmLog.timestamp),
+        level: 'error',
+        levelText: '错误',
+        message: alarmLog.message || '--'
+      };
+      this.faultLogs.unshift(log);
+      if (this.faultLogs.length > 100) {
+        this.faultLogs.pop();
+      }
+    },
+    formatAlarmTime(timestamp) {
+      if (!timestamp) return '--';
+      const date = new Date(timestamp);
+      if (Number.isNaN(date.getTime())) return '--';
+      return this.formatTime(date);
     }
   },
   mounted() {
@@ -500,6 +517,7 @@ export default {
     this.timer = setInterval(this.updateTime, 1000);
     this.pollData();
     this.pollTimer = setInterval(this.pollData, 2000);
+    this.initWebSocket();
   },
   beforeDestroy() {
     if (this.timer) {
@@ -507,6 +525,10 @@ export default {
     }
     if (this.pollTimer) {
       clearInterval(this.pollTimer);
+    }
+    if (this.wsClient) {
+      this.wsClient.disconnect();
+      this.wsClient = null;
     }
   }
 };
@@ -1100,6 +1122,15 @@ export default {
             }
           }
 
+          .fault-empty {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-size: 13px;
+          }
+
           .fault-item {
             display: flex;
             align-items: center;
@@ -1151,6 +1182,10 @@ export default {
       justify-content: space-between;
 
       .footer-left {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+
         .system-status {
           display: flex;
           align-items: center;
@@ -1174,6 +1209,16 @@ export default {
             color: #10b981;
             font-weight: 600;
           }
+
+          &.disconnected {
+            .status-pulse {
+              background: #f59e0b;
+            }
+
+            .status-value {
+              color: #f59e0b;
+            }
+          }
         }
       }
 
@@ -1191,6 +1236,10 @@ export default {
 
           i {
             font-size: 14px;
+          }
+
+          &.disconnected {
+            color: #f59e0b;
           }
         }
       }
