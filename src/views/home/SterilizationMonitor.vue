@@ -372,8 +372,21 @@ export default {
           this.productCodeText = (firstGood && firstGood.productCode) || '--';
           this.processPlanText = batch.processPlanNameCode || '--';
 
-          // 批次统计与托盘格子状态
-          const palletList = pallets || [];
+          // 批次统计与托盘格子状态：已上货的排前面（按上货时间先后），未上货的在后面，
+          // 保证托盘格子从左到右按顺序填充，不会跳着显示
+          const palletList = [...(pallets || [])].sort((a, b) => {
+            const aLoaded = a.loadStatus === '1' ? 0 : 1;
+            const bLoaded = b.loadStatus === '1' ? 0 : 1;
+            if (aLoaded !== bLoaded) return aLoaded - bLoaded;
+            if (aLoaded === 0) {
+              const ta = a.loadTime ? new Date(a.loadTime).getTime() : 0;
+              const tb = b.loadTime ? new Date(b.loadTime).getTime() : 0;
+              if (ta !== tb) return ta - tb;
+            }
+            return String(a.palletNo || a.id || '').localeCompare(
+              String(b.palletNo || b.id || '')
+            );
+          });
           this.batchTotalCount = palletList.length;
           this.batchStatus = palletList.map((p) => p.loadStatus === '1');
 
@@ -467,11 +480,17 @@ export default {
                 : `托盘 ${pallet.palletNo || '--'}`,
               targetQty: goods.length,
               scannedQty: goods.filter((g) => g.scanStatus === '1').length,
-              items: goods.map((g) => ({
-                id: g.id,
-                code: g.uid || '--',
-                status: g.scanStatus === '1' ? 'success' : 'pending'
-              }))
+              items: goods
+                .map((g) => ({
+                  id: g.id,
+                  code: g.uid || '--',
+                  status: g.scanStatus === '1' ? 'success' : 'pending'
+                }))
+                .sort((a, b) => {
+                  // 未扫描的排前面，失败的次之，已扫的排最后
+                  const order = { pending: 0, failed: 1, success: 2 };
+                  return order[a.status] - order[b.status];
+                })
             };
           };
           this.workstations = [
