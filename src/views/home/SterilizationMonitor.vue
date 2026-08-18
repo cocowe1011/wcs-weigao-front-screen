@@ -80,7 +80,10 @@
                     <div class="stat-big-value stat-green">
                       {{ trayLoadedCount }}
                     </div>
-                    <div class="stat-big-total">/ {{ batchTotalCount }}</div>
+                    <div class="stat-big-sep">/</div>
+                    <div class="stat-big-value stat-total">
+                      {{ batchTotalCount }}
+                    </div>
                   </div>
                   <div class="stat-big-label">已完成/总托盘</div>
                 </div>
@@ -769,24 +772,31 @@ export default {
 
             .stat-big-nums {
               display: flex;
-              align-items: baseline;
-              gap: 16px;
+              align-items: center;
+              gap: 20px;
             }
 
             .stat-big-value {
-              font-size: 176px;
+              font-size: 160px;
               font-weight: 800;
               line-height: 1;
               font-family: 'Courier New', monospace;
+              min-width: 192px;
+              text-align: center;
 
               &.stat-green {
-                color: #10b981;
+                color: #34d399;
+              }
+
+              &.stat-total {
+                color: #22d3ee;
               }
             }
 
-            .stat-big-total {
-              font-size: 78px;
+            .stat-big-sep {
+              font-size: 100px;
               font-weight: 700;
+              line-height: 1;
               color: #64748b;
               font-family: 'Courier New', monospace;
             }
