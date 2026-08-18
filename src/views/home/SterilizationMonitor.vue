@@ -54,27 +54,15 @@
                 }}</span>
               </div>
               <div class="info-item">
-                <span class="info-label">当前货物产品信息</span>
-                <span class="info-value cyan" :title="productInfoText">{{
-                  productInfoText
-                }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">规格型号</span>
-                <span class="info-value cyan" :title="specText">{{
-                  specText
-                }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">产品货号</span>
-                <span class="info-value cyan" :title="productCodeText">{{
-                  productCodeText
-                }}</span>
-              </div>
-              <div class="info-item">
                 <span class="info-label">工艺方案</span>
                 <span class="info-value cyan" :title="processPlanText">{{
                   processPlanText
+                }}</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">当前货物产品信息</span>
+                <span class="info-value cyan" :title="productInfoText">{{
+                  productInfoText
                 }}</span>
               </div>
               <div class="info-item">
@@ -88,10 +76,12 @@
             <div class="status-stats">
               <div class="batch-stats">
                 <div class="stat-big">
-                  <div class="stat-big-value stat-green">
-                    {{ trayLoadedCount }}
+                  <div class="stat-big-nums">
+                    <div class="stat-big-value stat-green">
+                      {{ trayLoadedCount }}
+                    </div>
+                    <div class="stat-big-total">/ {{ batchTotalCount }}</div>
                   </div>
-                  <div class="stat-big-total">/ {{ batchTotalCount }}</div>
                   <div class="stat-big-label">已完成/总托盘</div>
                 </div>
               </div>
@@ -301,8 +291,6 @@ export default {
       // 状态面板左侧卡片数据
       batchNo: '--',
       productInfoText: '--',
-      specText: '--',
-      productCodeText: '--',
       processPlanText: '--',
       destinationCabinetText: '--',
       // 批次灭菌数量统计
@@ -368,8 +356,6 @@ export default {
           const allGoods = (pallets || []).flatMap((p) => p.goods || []);
           const firstGood = allGoods.length > 0 ? allGoods[0] : null;
           this.productInfoText = (firstGood && firstGood.productName) || '--';
-          this.specText = (firstGood && firstGood.spec) || '--';
-          this.productCodeText = (firstGood && firstGood.productCode) || '--';
           this.processPlanText = batch.processPlanNameCode || '--';
 
           // 批次统计与托盘格子状态：已上货的排前面（按上货时间先后），未上货的在后面，
@@ -501,8 +487,6 @@ export default {
           this.apiConnected = true;
           this.batchNo = '--';
           this.productInfoText = '--';
-          this.specText = '--';
-          this.productCodeText = '--';
           this.processPlanText = '--';
           this.destinationCabinetText = '--';
           this.batchStatus = [];
@@ -630,7 +614,7 @@ export default {
 
   // Header Styles
   .monitor-header {
-    height: 56px;
+    height: 72px;
     border-bottom: 1px solid rgba(6, 182, 212, 0.3);
     background: rgba(15, 23, 42, 0.8);
 
@@ -647,8 +631,8 @@ export default {
         gap: 12px;
 
         .logo-icon {
-          width: 36px;
-          height: 36px;
+          width: 46px;
+          height: 46px;
           border-radius: 6px;
           overflow: hidden;
           flex-shrink: 0;
@@ -661,7 +645,7 @@ export default {
         }
 
         .main-title {
-          font-size: 18px;
+          font-size: 24px;
           font-weight: 700;
           color: #e2e8f0;
           margin: 0;
@@ -669,7 +653,7 @@ export default {
         }
 
         .sub-title {
-          font-size: 12px;
+          font-size: 15px;
           color: #94a3b8;
           margin: 2px 0 0 0;
         }
@@ -683,7 +667,7 @@ export default {
           text-align: right;
 
           .current-time {
-            font-size: 22px;
+            font-size: 32px;
             font-weight: 700;
             color: #22d3ee;
             line-height: 1.2;
@@ -691,7 +675,7 @@ export default {
           }
 
           .current-date {
-            font-size: 12px;
+            font-size: 15px;
             color: #94a3b8;
             margin-top: 2px;
           }
@@ -702,49 +686,51 @@ export default {
 
   // Status Panel
   .status-panel-container {
-    padding: 12px;
+    padding: 8px 12px;
     flex-shrink: 0;
 
     .status-panel {
       border-radius: 10px;
       border: 1px solid rgba(6, 182, 212, 0.3);
       background: rgba(15, 23, 42, 0.6);
-      padding: 14px 24px;
+      padding: 30px 40px;
       display: flex;
       align-items: center;
       overflow: hidden;
 
       .status-info {
         flex: 1;
-        display: flex;
-        align-items: center;
+        display: grid;
+        grid-template-columns: 1.5fr 1fr;
+        column-gap: 36px;
+        row-gap: 32px;
+        align-content: center;
         min-width: 0;
 
         .info-item {
-          flex: 1;
           display: flex;
           flex-direction: column;
           justify-content: center;
-          gap: 6px;
+          gap: 16px;
           min-width: 0;
-          padding-left: 20px;
+          padding-left: 32px;
           border-left: 1px solid rgba(71, 85, 105, 0.3);
 
-          &:first-child {
+          &:nth-child(2n + 1) {
             padding-left: 0;
             border-left: none;
           }
 
           .info-label {
-            font-size: 12px;
+            font-size: 26px;
             color: #94a3b8;
             font-weight: 500;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
             white-space: nowrap;
           }
 
           .info-value {
-            font-size: 17px;
+            font-size: 64px;
             font-weight: 700;
             line-height: 1.2;
             white-space: nowrap;
@@ -760,15 +746,15 @@ export default {
 
       .status-divider {
         width: 1px;
-        height: 44px;
+        height: 230px;
         background: rgba(71, 85, 105, 0.4);
-        margin: 0 28px;
+        margin: 0 40px;
         flex-shrink: 0;
       }
 
       .status-stats {
         flex-shrink: 0;
-        width: 280px;
+        width: 520px;
 
         .batch-stats {
           display: flex;
@@ -777,13 +763,20 @@ export default {
 
           .stat-big {
             display: flex;
-            align-items: baseline;
-            gap: 8px;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+
+            .stat-big-nums {
+              display: flex;
+              align-items: baseline;
+              gap: 16px;
+            }
 
             .stat-big-value {
-              font-size: 38px;
+              font-size: 176px;
               font-weight: 800;
-              line-height: 1.1;
+              line-height: 1;
               font-family: 'Courier New', monospace;
 
               &.stat-green {
@@ -792,18 +785,17 @@ export default {
             }
 
             .stat-big-total {
-              font-size: 20px;
+              font-size: 78px;
               font-weight: 700;
               color: #64748b;
               font-family: 'Courier New', monospace;
             }
 
             .stat-big-label {
-              margin-left: 6px;
-              font-size: 13px;
+              font-size: 30px;
               color: #94a3b8;
               font-weight: 600;
-              letter-spacing: 2px;
+              letter-spacing: 4px;
             }
           }
         }
@@ -1130,7 +1122,9 @@ export default {
       }
 
       .tray-panel {
-        flex-shrink: 0;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
         display: flex;
         flex-direction: column;
         border-bottom: 1px solid rgba(6, 182, 212, 0.2);
@@ -1141,6 +1135,27 @@ export default {
           flex-wrap: wrap;
           gap: 8px;
           align-content: flex-start;
+          flex: 1;
+          min-height: 0;
+          overflow-y: auto;
+
+          &::-webkit-scrollbar {
+            width: 6px;
+          }
+
+          &::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 3px;
+          }
+
+          &::-webkit-scrollbar-thumb {
+            background: rgba(6, 182, 212, 0.4);
+            border-radius: 3px;
+
+            &:hover {
+              background: rgba(6, 182, 212, 0.6);
+            }
+          }
 
           .tray-item {
             width: 36px;
